@@ -50,14 +50,14 @@ pub enum Postfix {
 }
 
 fn calc(rpnstack: &mut Vec<f64>, operator: Op) {
-    let r1 = rpnstack.pop().unwrap();
     let r2 = rpnstack.pop().unwrap();
-    match operator {
-        Op::Add => rpnstack.push(r1 + r2),
-        Op::Sub => rpnstack.push(r1 - r2),
-        Op::Mul => rpnstack.push(r1 * r2),
-        Op::Div => rpnstack.push(r1 / r2),
-    }
+    let r1 = rpnstack.pop().unwrap();
+    rpnstack.push(match operator {
+        Op::Add => r1 + r2,
+        Op::Sub => r1 - r2,
+        Op::Mul => r1 * r2,
+        Op::Div => r1 / r2,
+    });
 }
 
 pub fn infix_to_postfix_calc(tokenvec: &[Infix]) -> Option<f64> {
