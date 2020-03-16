@@ -49,7 +49,7 @@ pub enum Postfix {
     Number(f64),
 }
 
-fn calc(rpnstack: &mut Vec<f64>, operator: &Op) {
+fn calc(rpnstack: &mut Vec<f64>, operator: Op) {
     let r1 = rpnstack.pop().unwrap();
     let r2 = rpnstack.pop().unwrap();
     match operator {
@@ -79,7 +79,7 @@ pub fn infix_to_postfix_calc(tokenvec: &[Infix]) -> Option<f64> {
                 if let Some(oldop) = stack.last() {
                     if oldop.prec >= prec {
                         let calc_op = stack.pop().unwrap();
-                        calc(&mut rpnstack, &calc_op.op);
+                        calc(&mut rpnstack, calc_op.op);
                         postfixdebug.push(Postfix::Operator(calc_op.op));
                     }
                 }
@@ -88,9 +88,9 @@ pub fn infix_to_postfix_calc(tokenvec: &[Infix]) -> Option<f64> {
         }
     }
 
-    while stack.len() > 0 {
+    while !stack.is_empty() {
         let calc_op = stack.pop().unwrap();
-        calc(&mut rpnstack, &calc_op.op);
+        calc(&mut rpnstack, calc_op.op);
         postfixdebug.push(Postfix::Operator(calc_op.op));
     }
 
