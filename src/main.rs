@@ -90,7 +90,7 @@ pub fn infix_to_postfix_calc(tokenvec: &[Infix]) -> Option<f64> {
                             postfixdebug.push(Postfix::Operator(calc_op.op));
                             calc_op = stack.pop().unwrap();
                         }
-                        10 // avoid stack.pusz() ... below
+                        10 // avoid stack.push() ... below
                     }
                     Op::Add | Op::Sub => 1,
                     Op::Mul | Op::Div => 2,
@@ -102,6 +102,7 @@ pub fn infix_to_postfix_calc(tokenvec: &[Infix]) -> Option<f64> {
                         postfixdebug.push(Postfix::Operator(calc_op.op));
                     }
                 }
+                // except Op::ParenRight
                 if prec < 10 {
                     stack.push(InstrStack { op: *op, prec });
                 }
