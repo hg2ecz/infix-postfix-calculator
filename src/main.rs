@@ -2,26 +2,33 @@ use std::io::{self, Read};
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Op {
+    ParenLeft,
+    ParenRight,
     Add,
     Sub,
     Mul,
     Div,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Infix {
     Operator(Op),
     Number(f64),
 }
 
+// tokenize without syntax check
 pub fn tokenize(in_str: &str) -> Vec<Infix> {
     let mut tokenvec: Vec<Infix> = Vec::new();
     let mut token: String = String::new();
     for c in in_str.chars().filter(|&c| c > ' ') {
-        if ['+', '-', '*', '/'].contains(&c) {
-            tokenvec.push(Infix::Number(token.parse().unwrap())); // number
+        if ['(', ')', '+', '-', '*', '/'].contains(&c) {
+            if !token.is_empty() {
+                tokenvec.push(Infix::Number(token.parse().unwrap())); // number
+            }
             token.clear();
             tokenvec.push(Infix::Operator(match c {
+                '(' => Op::ParenLeft,
+                ')' => Op::ParenRight,
                 '+' => Op::Add,
                 '-' => Op::Sub,
                 '*' => Op::Mul,
@@ -38,6 +45,7 @@ pub fn tokenize(in_str: &str) -> Vec<Infix> {
     tokenvec
 }
 
+#[derive(Debug)]
 pub struct InstrStack {
     op: Op,
     prec: u8,
@@ -57,13 +65,14 @@ fn calc(rpnstack: &mut Vec<f64>, operator: Op) {
         Op::Sub => r1 - r2,
         Op::Mul => r1 * r2,
         Op::Div => r1 / r2,
+        Op::ParenLeft | Op::ParenRight => 0.,
     });
 }
 
 pub fn infix_to_postfix_calc(tokenvec: &[Infix]) -> Option<f64> {
     let mut stack: Vec<InstrStack> = Vec::new(); // instruction stack
     let mut rpnstack: Vec<f64> = Vec::new(); // RPN stack
-    let mut postfixdebug: Vec<Postfix> = Vec::new(); // full RPN
+    let mut postfixdebug: Vec<Postfix> = Vec::new(); // full RPN (for debug)
 
     for token in tokenvec {
         match token {
@@ -73,17 +82,29 @@ pub fn infix_to_postfix_calc(tokenvec: &[Infix]) -> Option<f64> {
             }
             Infix::Operator(op) => {
                 let prec = match op {
+                    Op::ParenLeft => 9,
+                    Op::ParenRight => {
+                        let mut calc_op = stack.pop().unwrap();
+                        while calc_op.op != Op::ParenLeft {
+                            calc(&mut rpnstack, calc_op.op);
+                            postfixdebug.push(Postfix::Operator(calc_op.op));
+                            calc_op = stack.pop().unwrap();
+                        }
+                        10 // avoid stack.pusz() ... below
+                    }
                     Op::Add | Op::Sub => 1,
                     Op::Mul | Op::Div => 2,
                 };
                 if let Some(oldop) = stack.last() {
-                    if oldop.prec >= prec {
+                    if prec < 9 && oldop.prec < 9 && oldop.prec >= prec {
                         let calc_op = stack.pop().unwrap();
                         calc(&mut rpnstack, calc_op.op);
                         postfixdebug.push(Postfix::Operator(calc_op.op));
                     }
                 }
-                stack.push(InstrStack { op: *op, prec });
+                if prec < 10 {
+                    stack.push(InstrStack { op: *op, prec });
+                }
             }
         }
     }
