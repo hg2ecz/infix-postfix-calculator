@@ -90,22 +90,19 @@ pub fn infix_to_postfix_calc(tokenvec: &[Infix]) -> Option<f64> {
                             postfixdebug.push(Postfix::Operator(calc_op.op));
                             calc_op = stack.pop().unwrap();
                         }
-                        10 // avoid stack.push() ... below
+                        continue;
                     }
                     Op::Add | Op::Sub => 1,
                     Op::Mul | Op::Div => 2,
                 };
                 if let Some(oldop) = stack.last() {
-                    if prec < 9 && oldop.prec < 9 && oldop.prec >= prec {
+                    if oldop.op != Op::ParenLeft && oldop.prec >= prec {
                         let calc_op = stack.pop().unwrap();
                         calc(&mut rpnstack, calc_op.op);
                         postfixdebug.push(Postfix::Operator(calc_op.op));
                     }
                 }
-                // except Op::ParenRight
-                if prec < 10 {
-                    stack.push(InstrStack { op: *op, prec });
-                }
+                stack.push(InstrStack { op: *op, prec });
             }
         }
     }
